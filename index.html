@@ -1,0 +1,160 @@
+# ghost_sandbox.py
+# Chris Lele Voice Guardian Prototype – Simon's Ghost OS v0.1 (Jan 2026)
+# Run: python ghost_sandbox.py
+
+import re
+import datetime
+import random  # for dummy variation in rewrites
+
+# ────────────────────────────────────────────────
+# SOVEREIGN KERNEL – Chris Lele Voice Rules
+# ────────────────────────────────────────────────
+
+FORBIDDEN_PATTERNS = [
+    r"\bin today's (fast-paced|ever-changing|dynamic) world\b",
+    r"\bunlock(?:ing)?\b",
+    r"\bdelve\b",
+    r"\btapestry\b",
+    r"\blandscape\b",
+    r"\bgame-changer\b",
+    r"\bparadigm shift\b",
+    r"\bimagine a world\b",
+    r"\bpicture this\b",
+    r"\barguably\b",
+    r"\bone could argue\b",
+    r"\bit seems\b",
+    r"\bexcited to share\b",
+    r"\bi hope this helps\b",
+]
+
+GURU_STRUCTURE_INDICATORS = [
+    r"\b1\.\s", r"\b2\.\s", r"\b3\.\s", r"\b•\s", r"Here are .* tips"
+]
+
+PREFERRED_ANALOGIES = [
+    "like trying to solve a Rubik's cube while wearing oven mitts",
+    "a leaky bucket with no plug in sight",
+    "turning your brain into a vending machine that spits out slop",
+    "polishing a turd until it looks like table stakes",
+    "feeding your voice into a blender set to 'helpful assistant' mode",
+]
+
+HIGH_SIGNAL_OPENERS = [
+    "Most people think ",
+    "The common advice is wrong here: ",
+    "Here's what nobody tells you about ",
+    "Everyone's doing it wrong because ",
+    "The real problem isn't ",
+]
+
+# ────────────────────────────────────────────────
+# AUDITOR – Drift / Slop Checker
+# ────────────────────────────────────────────────
+
+def audit_draft(text: str) -> dict:
+    issues = []
+    lowered = text.lower()
+
+    # Forbidden phrases
+    for pattern in FORBIDDEN_PATTERNS:
+        if re.search(pattern, lowered, re.IGNORECASE):
+            issues.append(f"Forbidden smoothing: {pattern}")
+
+    # Guru bullet / list structure
+    bullet_count = sum(len(re.findall(p, text)) for p in GURU_STRUCTURE_INDICATORS)
+    if bullet_count >= 3:
+        issues.append(f"Guru bullet structure detected ({bullet_count} indicators)")
+
+    # Too polite / no friction (heuristic)
+    if "hope this" in lowered or "what do you think" in lowered or "let me know" in lowered:
+        issues.append("Soft / assistant CTA detected")
+
+    score = min(len(issues) * 20 + (bullet_count * 10), 100)
+
+    return {
+        "drift_score": score,
+        "issues": issues,
+        "verdict": "REJECT - needs friction" if score > 30 else "PASS - wizard energy",
+        "suggestion": "Rewrite with spiky opener + analogy" if score > 30 else "Good to commit"
+    }
+
+
+# ────────────────────────────────────────────────
+# DRAFT GENERATOR (dummy – replace with real LLM call later)
+# ────────────────────────────────────────────────
+
+def generate_draft(topic: str, attempt: int = 1) -> str:
+    # This is placeholder logic — in real version call Claude / OpenAI here
+    opener = random.choice(HIGH_SIGNAL_OPENERS)
+    analogy = random.choice(PREFERRED_ANALOGIES)
+
+    base = f"{opener}{topic.lower()}. "
+
+    if attempt > 1:
+        base += "The usual AI fix actually makes it worse — "
+
+    base += f"It's {analogy}. "
+
+    body = (
+        f"Most tools train on your old posts and slowly turn you into a polished version of everyone else. "
+        f"Pushback is what keeps the edge alive, but after a few outputs even that gets shaky. "
+        f"Without constant adversarial pressure, you're just feeding the flattening machine."
+    )
+
+    close = f"So where's the line between scaffold and crutch? Thoughts?"
+
+    return base + body + "\n\n" + close
+
+
+# ────────────────────────────────────────────────
+# MAIN LOOP – Spawn → Audit → Rewrite if needed → Save
+# ────────────────────────────────────────────────
+
+def run_sandbox(topic: str, max_attempts: int = 3):
+    print(f"\n=== Ghost Sandbox – Topic: {topic} ===\n")
+
+    for attempt in range(1, max_attempts + 1):
+        print(f"Attempt {attempt}: Generating draft...")
+        draft = generate_draft(topic, attempt)
+        print("\nDraft:\n" + "="*60)
+        print(draft)
+        print("="*60)
+
+        audit = audit_draft(draft)
+        print("\nAudit result:")
+        print(f"Drift score: {audit['drift_score']}/100")
+        print(f"Verdict: {audit['verdict']}")
+        if audit['issues']:
+            print("Issues:")
+            for i in audit['issues']:
+                print(f"  - {i}")
+        print(f"Suggestion: {audit['suggestion']}\n")
+
+        if audit['drift_score'] <= 30:
+            print("PASS – Saving to output/")
+            timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            filename = f"output/good_draft_{timestamp}.md"
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"# Draft for: {topic}\n\n{draft}\n\n---\nAudit: {audit['verdict']} (score {audit['drift_score']})")
+            print(f"Saved → {filename}")
+            return
+
+        print("REJECTED – Rewriting...\n" + "-"*60 + "\n")
+
+    print("Max attempts reached – manual intervention needed.")
+
+
+# ────────────────────────────────────────────────
+# Run it!
+# ────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    # Create output folder if missing
+    import os
+    os.makedirs("output", exist_ok=True)
+
+    topic = input("Enter LinkedIn post topic: ").strip()
+    if not topic:
+        topic = "why treating AI like a vending machine ruins your authentic voice over time"
+
+    run_sandbox(topic)
